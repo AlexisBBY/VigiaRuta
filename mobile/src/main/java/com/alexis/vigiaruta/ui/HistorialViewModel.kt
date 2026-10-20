@@ -26,13 +26,17 @@ data class ResumenDia(
 
 data class HistorialUiState(
     val resumen: List<ResumenDia> = emptyList(),
+    val horasRiesgo: List<Int> = List(BLOQUES_HORA) { 0 },
     val eventos: List<EventoEntity> = emptyList()
 )
+
+const val BLOQUES_HORA = 6
+const val HORAS_POR_BLOQUE = 24 / BLOQUES_HORA
 
 class HistorialViewModel(repositorio: EventoRepository) : ViewModel() {
 
     val estado: StateFlow<HistorialUiState> = repositorio.observarUltimosDias(DIAS)
-        .map { eventos -> HistorialUiState(resumirPorDia(eventos), eventos) }
+        .map { eventos -> HistorialUiState(resumirPorDia(eventos), contarPorHora(eventos), eventos) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistorialUiState())
 
     private fun resumirPorDia(eventos: List<EventoEntity>): List<ResumenDia> {
@@ -51,6 +55,16 @@ class HistorialViewModel(repositorio: EventoRepository) : ViewModel() {
                 reaccionPromedioSeg = if (reacciones.isEmpty()) null else reacciones.average() / 1000
             )
         }
+    }
+
+    private fun contarPorHora(eventos: List<EventoEntity>): List<Int> {
+        val zona = ZoneId.systemDefault()
+        val conteo = IntArray(BLOQUES_HORA)
+        eventos.forEach {
+            val hora = Instant.ofEpochMilli(it.fechaHora).atZone(zona).hour
+            conteo[hora / HORAS_POR_BLOQUE]++
+        }
+        return conteo.toList()
     }
 
     companion object {

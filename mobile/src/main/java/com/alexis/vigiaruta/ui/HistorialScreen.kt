@@ -1,7 +1,9 @@
 package com.alexis.vigiaruta.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,11 +48,15 @@ fun HistorialScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Text("Últimos 5 días", style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                GraficaAlertas(estado.resumen)
-                Spacer(Modifier.height(8.dp))
-                TablaReaccion(estado.resumen)
+                Column {
+                    Text("Últimos 5 días", style = MaterialTheme.typography.titleLarge)
+                    Spacer(Modifier.height(8.dp))
+                    GraficaAlertas(estado.resumen)
+                    Spacer(Modifier.height(8.dp))
+                    TablaReaccion(estado.resumen)
+                    Spacer(Modifier.height(16.dp))
+                    HorasRiesgo(estado.horasRiesgo)
+                }
             }
             item {
                 Text("Eventos", style = MaterialTheme.typography.titleMedium)
@@ -110,6 +116,41 @@ private fun TablaReaccion(resumen: List<ResumenDia>) {
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+@Composable
+private fun HorasRiesgo(conteos: List<Int>) {
+    val color = MaterialTheme.colorScheme.error
+    val maximo = conteos.maxOrNull() ?: 0
+
+    Text("Horas de riesgo", style = MaterialTheme.typography.titleMedium)
+    Spacer(Modifier.height(8.dp))
+    Row(Modifier.fillMaxWidth()) {
+        conteos.forEachIndexed { i, cantidad ->
+            val intensidad = if (maximo == 0) 0f else 0.15f + 0.85f * cantidad / maximo
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(32.dp)
+                        .padding(horizontal = 2.dp)
+                        .background(color.copy(alpha = intensidad)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("$cantidad", style = MaterialTheme.typography.bodySmall)
+                }
+                Text("${i * HORAS_POR_BLOQUE} h", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+    if (maximo > 0) {
+        val inicio = conteos.indexOf(maximo) * HORAS_POR_BLOQUE
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Más alertas entre las $inicio:00 y las ${inicio + HORAS_POR_BLOQUE}:00. Procura descansar antes de manejar a esa hora.",
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 
