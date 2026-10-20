@@ -15,6 +15,8 @@ import com.alexis.vigiaruta.data.EstadoMonitoreo
 import com.alexis.vigiaruta.di.ServiceLocator
 import com.alexis.vigiaruta.ui.MainActivity
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class MonitoreoService : LifecycleService() {
@@ -43,6 +45,12 @@ class MonitoreoService : LifecycleService() {
             repositorio.iniciar(ServiceLocator.crearDetector())
             lectura = lifecycleScope.launch {
                 ServiceLocator.fuenteSensores().lecturas().collect { repositorio.procesar(it) }
+            }
+            lifecycleScope.launch {
+                while (isActive) {
+                    ServiceLocator.enviador.reenviarPendientes()
+                    delay(INTERVALO_REINTENTO_MS)
+                }
             }
             lifecycleScope.launch {
                 repositorio.estado.collect { estado ->
@@ -100,6 +108,7 @@ class MonitoreoService : LifecycleService() {
         private const val CANAL_ALERTA = "alertas"
         private const val ID_NOTIF_SERVICIO = 1
         private const val ID_NOTIF_ALERTA = 2
+        private const val INTERVALO_REINTENTO_MS = 60_000L
         private const val ACCION_DETENER = "com.alexis.vigiaruta.DETENER"
 
         fun iniciar(context: Context) {

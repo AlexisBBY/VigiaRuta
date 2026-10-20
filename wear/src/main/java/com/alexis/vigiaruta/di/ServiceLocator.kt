@@ -23,10 +23,12 @@ object ServiceLocator {
         appContext = context.applicationContext
     }
 
+    val enviador: EnviadorEventos by lazy { EnviadorEventos(appContext) }
+
     val monitoreoRepositorio: MonitoreoRepositorio by lazy {
         MonitoreoRepositorio(
             alertador = AlertadorAndroid(appContext),
-            enviador = EnviadorEventos(appContext),
+            enviador = enviador,
             scope = scopeApp
         )
     }
